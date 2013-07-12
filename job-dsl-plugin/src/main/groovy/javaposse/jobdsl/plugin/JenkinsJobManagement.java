@@ -6,7 +6,10 @@ import com.google.common.base.Function;
 import com.google.common.base.Predicates;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Sets;
+import groovy.util.Node;
+import groovy.util.XmlParser;
 import hudson.EnvVars;
+import hudson.ExtensionList;
 import hudson.FilePath;
 import hudson.Plugin;
 import hudson.XmlFile;
@@ -17,13 +20,16 @@ import hudson.model.Item;
 import hudson.model.Run;
 import hudson.model.View;
 import hudson.util.VersionNumber;
+import hudson.util.XStream2;
 import javaposse.jobdsl.dsl.AbstractJobManagement;
-import javaposse.jobdsl.dsl.GeneratedJob;
 import javaposse.jobdsl.dsl.ConfigurationMissingException;
+import javaposse.jobdsl.dsl.GeneratedJob;
 import javaposse.jobdsl.dsl.JobConfigurationNotFoundException;
 import javaposse.jobdsl.dsl.NameNotProvidedException;
+import javaposse.jobdsl.dsl.helpers.Context;
 import jenkins.model.Jenkins;
 import jenkins.model.ModifiableTopLevelItemGroup;
+import org.apache.commons.lang.ClassUtils;
 import org.custommonkey.xmlunit.Diff;
 import org.custommonkey.xmlunit.XMLUnit;
 
@@ -34,6 +40,7 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -42,12 +49,14 @@ import java.util.logging.Logger;
 
 import static hudson.model.View.createViewFromXML;
 import static hudson.security.ACL.SYSTEM;
+import static org.apache.commons.lang.reflect.MethodUtils.getMatchingAccessibleMethod;
 
 /**
  * Manages Jenkins Jobs, providing facilities to retrieve and create / update.
  */
 public final class JenkinsJobManagement extends AbstractJobManagement {
     static final Logger LOGGER = Logger.getLogger(JenkinsJobManagement.class.getName());
+    static final XStream2 XSTREAM = new XStream2();
 
     EnvVars envVars;
     Set<GeneratedJob> modifiedJobs;
@@ -301,6 +310,36 @@ public final class JenkinsJobManagement extends AbstractJobManagement {
 
     public static Set<String> getTemplates(Collection<GeneratedJob> jobs) {
         return Sets.newLinkedHashSet(Collections2.filter(Collections2.transform(jobs, new ExtractTemplate()), Predicates.notNull()));
+    }
+
+    @Override
+    public Node callExtension(final Class<? extends Context> contextType, final String name, Object... args) {
+        ExtensionList<JobDslContextExtensionPoint> extensionList = Jenkins.getInstance().getExtensionList(JobDslContextExtensionPoint.class);
+        Method method = null;
+        JobDslContextExtensionPoint extension = null;
+        Class[] parameterTypes = ClassUtils.toClass(args);
+        for (JobDslContextExtensionPoint jobDslContextExtensionPoint : extensionList) {
+            try {
+                Method candidateMethod = getMatchingAccessibleMethod(jobDslContextExtensionPoint.getClass(), name, parameterTypes);
+                DslMethod annotation = candidateMethod.getAnnotation(DslMethod.class);
+                if (annotation != null && annotation.context().isAssignableFrom(contextType)) {
+                    method = candidateMethod;
+                    extension = jobDslContextExtensionPoint;
+                    break;
+                }
+            } catch (Exception e) {
+                // ignore
+            }
+        }
+        if (extension == null || method == null) {
+            return null;
+        }
+        try {
+            Object result = method.invoke(extension, args);
+            return new XmlParser().parseText(XSTREAM.toXML(result));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static class ExtractJobName implements Function<GeneratedJob, String> {

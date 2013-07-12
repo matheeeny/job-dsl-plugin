@@ -112,7 +112,8 @@ class JobTest extends Specification {
 
     def 'create withXml blocks'() {
         setup:
-        Job job = new Job(null)
+        JobManagement jm = Mock()
+        Job job = new Job(jm)
 
         when:
         job.configure { Node node ->

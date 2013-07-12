@@ -1,5 +1,7 @@
 package javaposse.jobdsl.dsl;
 
+import javaposse.jobdsl.dsl.helpers.Context;
+
 /**
  * Interface to manage jobs, which the DSL needs to do.
  *
@@ -61,4 +63,6 @@ public interface JobManagement {
      * @return id of Credentials or <code>null</code> if no credentials could be found
      */
     String getCredentialsId(String credentialsDescription);
+
+    Node callExtension(Class<? extends Context> contextType, String name, Object... args);
 }

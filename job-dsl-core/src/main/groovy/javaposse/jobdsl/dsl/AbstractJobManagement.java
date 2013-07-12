@@ -1,6 +1,8 @@
 package javaposse.jobdsl.dsl;
 
 import com.google.common.collect.Maps;
+import groovy.util.Node;
+import javaposse.jobdsl.dsl.helpers.Context;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -52,6 +54,11 @@ public abstract class AbstractJobManagement implements JobManagement {
     @Override
     public String readFileInWorkspace(String filePath) throws IOException {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Node callExtension(Class<? extends Context> contextType, String name, Object... args) {
+        return null;
     }
 
     protected void validateUpdateArgs(String jobName, String config) {
