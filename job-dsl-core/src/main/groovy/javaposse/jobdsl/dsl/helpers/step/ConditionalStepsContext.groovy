@@ -1,22 +1,24 @@
 package javaposse.jobdsl.dsl.helpers.step
-import com.google.common.base.Preconditions
+import javaposse.jobdsl.dsl.JobManagement
 import javaposse.jobdsl.dsl.helpers.AbstractContextHelper
+
+import com.google.common.base.Preconditions
 
 class ConditionalStepsContext extends AbstractStepContext {
 
     RunConditionContext conditionContext
     String runnerClass
 
-    ConditionalStepsContext() {
-        super()
+    ConditionalStepsContext(JobManagement jobManagement) {
+        super(jobManagement)
     }
 
-    ConditionalStepsContext(String runnerName, Closure conditionClosure) {
-        this(runnerName, [], conditionClosure)
+    ConditionalStepsContext(JobManagement jobManagement, String runnerName, Closure conditionClosure) {
+        this(jobManagement, runnerName, [], conditionClosure)
     }
 
-    ConditionalStepsContext(String runnerName, List<Node> stepNodes, Closure conditionClosure) {
-        super(stepNodes)
+    ConditionalStepsContext(JobManagement jobManagement, String runnerName, List<Node> stepNodes, Closure conditionClosure) {
+        super(jobManagement, stepNodes)
         Preconditions.checkArgument(EvaluationRunners.find(runnerName) != null, "${runnerName} not a valid evaluation runner.")
 
         condition(conditionClosure)

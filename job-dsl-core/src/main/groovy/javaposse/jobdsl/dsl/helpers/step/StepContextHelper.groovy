@@ -1,19 +1,24 @@
 package javaposse.jobdsl.dsl.helpers.step
 
-import com.google.common.base.Preconditions
+import javaposse.jobdsl.dsl.JobManagement
 import javaposse.jobdsl.dsl.JobType
 import javaposse.jobdsl.dsl.WithXmlAction
 import javaposse.jobdsl.dsl.helpers.AbstractContextHelper
 
+import com.google.common.base.Preconditions
+
 class StepContextHelper extends AbstractContextHelper<StepContext> {
 
-    StepContextHelper(List<WithXmlAction> withXmlActions, JobType jobType) {
+    JobManagement jobManagement
+
+    StepContextHelper(List<WithXmlAction> withXmlActions, JobType jobType, JobManagement jobManagement) {
         super(withXmlActions, jobType)
+        this.jobManagement = jobManagement
     }
 
     def steps(Closure closure) {
         Preconditions.checkState(type != JobType.Maven, "steps cannot be applied for Maven jobs")
-        execute(closure, new StepContext(type))
+        execute(closure, new StepContext(type, jobManagement))
     }
 
     Closure generateWithXmlClosure(StepContext context) {

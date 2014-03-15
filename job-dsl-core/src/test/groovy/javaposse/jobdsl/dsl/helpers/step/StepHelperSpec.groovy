@@ -1,18 +1,19 @@
 package javaposse.jobdsl.dsl.helpers.step
 
+import static javaposse.jobdsl.dsl.helpers.common.MavenContext.LocalRepositoryLocation.*
+import javaposse.jobdsl.dsl.JobManagement
 import javaposse.jobdsl.dsl.JobType
 import javaposse.jobdsl.dsl.WithXmlAction
 import javaposse.jobdsl.dsl.WithXmlActionSpec
 import spock.lang.Specification
 import spock.lang.Unroll
 
-import static javaposse.jobdsl.dsl.helpers.common.MavenContext.LocalRepositoryLocation.*
-
 public class StepHelperSpec extends Specification {
 
     List<WithXmlAction> mockActions = Mock()
-    StepContextHelper helper = new StepContextHelper(mockActions, JobType.Freeform)
-    StepContext context = new StepContext(JobType.Freeform)
+    JobManagement jobManagement = Mock()
+    StepContextHelper helper = new StepContextHelper(mockActions, JobType.Freeform, jobManagement)
+    StepContext context = new StepContext(JobType.Freeform, jobManagement)
 
     def 'call shell method'() {
         when:
@@ -805,7 +806,7 @@ public class StepHelperSpec extends Specification {
         }
 
         when:
-        def withXmlAction = helper.generateWithXmlAction(new StepContext([stepNode], JobType.Freeform))
+        def withXmlAction = helper.generateWithXmlAction(new StepContext([stepNode], JobType.Freeform, jobManagement))
         withXmlAction.execute(root)
 
         then:
@@ -815,7 +816,7 @@ public class StepHelperSpec extends Specification {
     def 'no steps for Maven jobs'() {
         setup:
         List<WithXmlAction> mockActions = Mock()
-        StepContextHelper helper = new StepContextHelper(mockActions, JobType.Maven)
+        StepContextHelper helper = new StepContextHelper(mockActions, JobType.Maven, jobManagement)
 
         when:
         helper.steps {}

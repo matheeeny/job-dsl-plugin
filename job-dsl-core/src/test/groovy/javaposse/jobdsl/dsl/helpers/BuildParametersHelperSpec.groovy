@@ -1,5 +1,6 @@
 package javaposse.jobdsl.dsl.helpers
 
+import javaposse.jobdsl.dsl.JobManagement;
 import javaposse.jobdsl.dsl.JobType
 import javaposse.jobdsl.dsl.WithXmlAction
 import spock.lang.Specification
@@ -7,8 +8,9 @@ import spock.lang.Specification
 public class BuildParametersHelperSpec extends Specification {
 
     List<WithXmlAction> mockActions = Mock()
-    BuildParametersContextHelper helper = new BuildParametersContextHelper(mockActions, JobType.Freeform)
-    BuildParametersContext context = new BuildParametersContext()
+    JobManagement jobManagement = Mock()
+    BuildParametersContextHelper helper = new BuildParametersContextHelper(mockActions, JobType.Freeform, jobManagement)
+    BuildParametersContext context = new BuildParametersContext(jobManagement)
 
     def 'base booleanParam usage'() {
         when:

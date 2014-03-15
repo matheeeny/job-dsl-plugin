@@ -795,7 +795,7 @@ public class ScmHelperSpec extends Specification {
         }
 
         when:
-        def withXmlAction = helper.generateWithXmlAction( new ScmContext(scmNode) )
+        def withXmlAction = helper.generateWithXmlAction( new ScmContext(scmNode, false, mockJobManagement) )
         withXmlAction.execute(root)
 
         then:

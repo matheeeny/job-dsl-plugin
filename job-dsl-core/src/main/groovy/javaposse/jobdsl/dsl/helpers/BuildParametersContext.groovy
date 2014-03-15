@@ -1,11 +1,24 @@
 package javaposse.jobdsl.dsl.helpers
 
+import javaposse.jobdsl.dsl.JobManagement;
+import groovy.util.Node;
+
 import com.google.common.base.Preconditions
 
 
-class BuildParametersContext implements Context {
+class BuildParametersContext extends AbstractContext {
 
     Map<String, Node> buildParameterNodes = [:]
+    
+    BuildParametersContext(JobManagement jobManagement) {
+        super(jobManagement)
+    }
+    
+    void addExtensionNode(Node node) {
+        String parameterName = node['name']
+        Preconditions.checkArgument(!buildParameterNodes.containsKey(parameterName), 'parameter $parameterName already defined')
+        buildParameterNodes.put(parameterName, node)
+    }
 
     /**
      * <project>

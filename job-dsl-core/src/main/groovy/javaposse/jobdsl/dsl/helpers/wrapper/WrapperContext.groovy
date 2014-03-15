@@ -1,21 +1,21 @@
 package javaposse.jobdsl.dsl.helpers.wrapper
 
-import com.google.common.base.Preconditions
+import static javaposse.jobdsl.dsl.helpers.wrapper.WrapperContext.Timeout.absolute
 import javaposse.jobdsl.dsl.JobManagement
 import javaposse.jobdsl.dsl.JobType
 import javaposse.jobdsl.dsl.WithXmlAction
+import javaposse.jobdsl.dsl.helpers.AbstractContext
 import javaposse.jobdsl.dsl.helpers.AbstractContextHelper
-import javaposse.jobdsl.dsl.helpers.Context
-import javaposse.jobdsl.dsl.helpers.step.StepEnvironmentVariableContext
 
-import static WrapperContext.Timeout.absolute
+import com.google.common.base.Preconditions
 
-class WrapperContext implements Context {
+class WrapperContext extends AbstractContext {
     List<Node> wrapperNodes = []
     JobType type
     JobManagement jobManagement
 
     WrapperContext(JobType jobType, JobManagement jobManagement) {
+        super(jobManagement)
         this.jobManagement = jobManagement
         this.type = jobType
     }
@@ -23,6 +23,10 @@ class WrapperContext implements Context {
     WrapperContext(List<Node> wrapperNodes, JobType jobType, JobManagement jobManagement) {
         this(jobType, jobManagement)
         this.wrapperNodes = wrapperNodes
+    }
+    
+    void addExtensionNode(Node node) {
+        wrapperNodes << node    
     }
 
     def timestamps() {
@@ -366,7 +370,7 @@ class WrapperContext implements Context {
      * @param releaseClosure attributes and steps used by the plugin
      */
     def release(Closure releaseClosure) {
-        ReleaseContext releaseContext = new ReleaseContext()
+        ReleaseContext releaseContext = new ReleaseContext(jobManagement)
         AbstractContextHelper.executeInContext(releaseClosure, releaseContext)
             
         NodeBuilder nodeBuilder = new NodeBuilder()

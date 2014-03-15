@@ -1,25 +1,33 @@
 package javaposse.jobdsl.dsl.helpers.publisher
 
+import groovy.util.Node;
+import javaposse.jobdsl.dsl.JobManagement
 import javaposse.jobdsl.dsl.WithXmlAction
+import javaposse.jobdsl.dsl.helpers.AbstractContext
 import javaposse.jobdsl.dsl.helpers.AbstractContextHelper
-import javaposse.jobdsl.dsl.helpers.Context
 import javaposse.jobdsl.dsl.helpers.common.DownstreamContext
 
 
-class PublisherContext implements Context {
+class PublisherContext extends AbstractContext {
     List<Node> publisherNodes = []
 
     @Delegate
     StaticAnalysisPublisherContext staticAnalysisPublisherHelper
 
 
-    PublisherContext() {
+    PublisherContext(JobManagement jobManagement) {
+        super(jobManagement)
         staticAnalysisPublisherHelper = new StaticAnalysisPublisherContext(publisherNodes)
     }
 
-    PublisherContext(List<Node> publisherNodes) {
+    PublisherContext(JobManagement jobManagement, List<Node> publisherNodes) {
+        this(jobManagement)
         this.publisherNodes = publisherNodes
         staticAnalysisPublisherHelper = new StaticAnalysisPublisherContext(this.publisherNodes)
+    }
+    
+    void addExtensionNode(Node node) {
+        publisherNodes << node
     }
 
     /**

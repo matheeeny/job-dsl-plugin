@@ -1,5 +1,6 @@
 package javaposse.jobdsl.dsl.helpers.wrapper
 
+import javaposse.jobdsl.dsl.JobManagement
 import javaposse.jobdsl.dsl.helpers.AbstractContextHelper
 import javaposse.jobdsl.dsl.helpers.BuildParametersContext
 import javaposse.jobdsl.dsl.helpers.Context
@@ -15,27 +16,32 @@ class ReleaseContext implements Context {
     List<Node> postBuildSteps = []
     List<Node> postFailedBuildSteps = []
     Closure configureBlock
+    JobManagement jobManagement
+    
+    ReleaseContext(JobManagement jobManagement) {
+        this.jobManagement = jobManagement
+    }
 
     def preBuildSteps(Closure closure) {
-        def stepContext = new AbstractStepContext()
+        def stepContext = new AbstractStepContext(jobManagement)
         AbstractContextHelper.executeInContext(closure, stepContext)
         preBuildSteps.addAll(stepContext.stepNodes)
     }
 
     def postSuccessfulBuildSteps(Closure closure) {
-        def stepContext = new AbstractStepContext()
+        def stepContext = new AbstractStepContext(jobManagement)
         AbstractContextHelper.executeInContext(closure, stepContext)
         postSuccessfulBuildSteps.addAll(stepContext.stepNodes)
     }
 
     def postBuildSteps(Closure closure) {
-        def stepContext = new AbstractStepContext()
+        def stepContext = new AbstractStepContext(jobManagement)
         AbstractContextHelper.executeInContext(closure, stepContext)
         postBuildSteps.addAll(stepContext.stepNodes)
     }
 
     def postFailedBuildSteps(Closure closure) {
-        def stepContext = new AbstractStepContext()
+        def stepContext = new AbstractStepContext(jobManagement)
         AbstractContextHelper.executeInContext(closure, stepContext)
         postFailedBuildSteps.addAll(stepContext.stepNodes)
     }
@@ -57,7 +63,7 @@ class ReleaseContext implements Context {
     }
 
     def parameters(Closure parametersClosure) {
-        BuildParametersContext parametersContext = new BuildParametersContext()
+        BuildParametersContext parametersContext = new BuildParametersContext(jobManagement)
         AbstractContextHelper.executeInContext(parametersClosure, parametersContext)
         params.addAll(parametersContext.buildParameterNodes.values())
     }

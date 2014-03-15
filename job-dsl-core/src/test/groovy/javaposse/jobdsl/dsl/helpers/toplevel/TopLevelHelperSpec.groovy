@@ -1,5 +1,6 @@
 package javaposse.jobdsl.dsl.helpers.toplevel
 
+import javaposse.jobdsl.dsl.JobManagement
 import javaposse.jobdsl.dsl.JobType
 import javaposse.jobdsl.dsl.WithXmlAction
 import javaposse.jobdsl.dsl.WithXmlActionSpec
@@ -9,7 +10,8 @@ import spock.lang.Unroll
 public class TopLevelHelperSpec extends Specification {
 
     List<WithXmlAction> mockActions = Mock()
-    TopLevelHelper helper = new TopLevelHelper(mockActions, JobType.Freeform)
+    JobManagement jobManagement = Mock()
+    TopLevelHelper helper = new TopLevelHelper(mockActions, JobType.Freeform, jobManagement)
     Node root = new XmlParser().parse(new StringReader(WithXmlActionSpec.xml))
 
     def 'add description'() {

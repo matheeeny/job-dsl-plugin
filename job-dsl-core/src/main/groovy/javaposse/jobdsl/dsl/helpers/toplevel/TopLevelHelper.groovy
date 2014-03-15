@@ -1,14 +1,19 @@
 package javaposse.jobdsl.dsl.helpers.toplevel
-import com.google.common.base.Preconditions
+import javaposse.jobdsl.dsl.JobManagement
 import javaposse.jobdsl.dsl.JobType
 import javaposse.jobdsl.dsl.WithXmlAction
 import javaposse.jobdsl.dsl.helpers.AbstractContextHelper
 import javaposse.jobdsl.dsl.helpers.AbstractHelper
 
-class TopLevelHelper extends AbstractHelper {
+import com.google.common.base.Preconditions
 
-    TopLevelHelper(List<WithXmlAction> withXmlActions, JobType jobType) {
+class TopLevelHelper extends AbstractHelper {
+    
+    JobManagement jobManagement
+
+    TopLevelHelper(List<WithXmlAction> withXmlActions, JobType jobType, JobManagement jobManagement) {
         super(withXmlActions, jobType)
+        this.jobManagement = jobManagement
     }
 
     def description(String descriptionString) {
@@ -17,7 +22,17 @@ class TopLevelHelper extends AbstractHelper {
             it / descNode
         }
     }
-
+    
+    def methodMissing(String name, args) {
+        Node node = jobManagement.callExtension(this, name, args)
+        if (!node) {
+            throw new MissingMethodException(name, this, args)
+        }
+        execute { 
+            it / node
+        }
+    }
+    
     /**
      * "Restrict where this project can be run"
      * <assignedNode>FullTools&amp;&amp;RPM&amp;&amp;DC</assignedNode>

@@ -1,23 +1,31 @@
 package javaposse.jobdsl.dsl.helpers.triggers
 
 import com.google.common.base.Preconditions
+
+import javaposse.jobdsl.dsl.JobManagement;
 import javaposse.jobdsl.dsl.JobType
 import javaposse.jobdsl.dsl.WithXmlAction
+import javaposse.jobdsl.dsl.helpers.AbstractContext;
 import javaposse.jobdsl.dsl.helpers.AbstractContextHelper
 import javaposse.jobdsl.dsl.helpers.Context
 
 
-class TriggerContext implements Context {
+class TriggerContext extends AbstractContext {
     List<WithXmlAction> withXmlActions
     JobType jobType
     List<Node> triggerNodes
 
-    TriggerContext(List<WithXmlAction> withXmlActions = [], JobType jobType = JobType.Freeform, List<Node> triggerNodes = []) {
+    TriggerContext(List<WithXmlAction> withXmlActions = [], JobType jobType = JobType.Freeform, JobManagement jobManagement, List<Node> triggerNodes = []) {
+        super(jobManagement)
         this.withXmlActions = withXmlActions
         this.jobType = jobType
         this.triggerNodes = triggerNodes
     }
-
+    
+    void addExtensionNode(Node node) {
+        triggerNodes << node    
+    }
+    
     /**
      * Adds DSL  for adding and configuring the URL trigger plugin to a job.
      *

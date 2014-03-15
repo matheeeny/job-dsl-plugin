@@ -1,28 +1,35 @@
 package javaposse.jobdsl.dsl.helpers
 
-import com.google.common.base.Preconditions
+import static javaposse.jobdsl.dsl.helpers.AbstractContextHelper.executeInContext
+import static javaposse.jobdsl.dsl.helpers.publisher.PublisherContext.getValidCloneWorkspaceCriteria
+import groovy.util.Node;
 import hudson.plugins.perforce.PerforcePasswordEncryptor
 import javaposse.jobdsl.dsl.JobManagement
 import javaposse.jobdsl.dsl.WithXmlAction
 import javaposse.jobdsl.dsl.helpers.scm.GitContext
 
-import static javaposse.jobdsl.dsl.helpers.AbstractContextHelper.executeInContext
-import static javaposse.jobdsl.dsl.helpers.publisher.PublisherContext.getValidCloneWorkspaceCriteria
+import com.google.common.base.Preconditions
 
-class ScmContext implements Context {
+class ScmContext extends AbstractContext {
     boolean multiEnabled
     List<Node> scmNodes = []
     List<WithXmlAction> withXmlActions = []
     JobManagement jobManagement
 
-    ScmContext(multiEnabled = false, withXmlActions = [], jobManagement = null) {
+    ScmContext(multiEnabled = false, withXmlActions = [], jobManagement) {
+        super(jobManagement)
         this.multiEnabled = multiEnabled
         this.withXmlActions = withXmlActions
         this.jobManagement = jobManagement
     }
+    
+    void addExtensionNode(Node node) {
+        scmNodes << node
+    }
 
     // Package scope
-    ScmContext(Node singleNode, multiEnabled = false) {
+    ScmContext(Node singleNode, multiEnabled = false, JobManagement jobManagement) {
+        super(jobManagement)
         this.multiEnabled = multiEnabled
         scmNodes << singleNode // Safe since this is the constructor
     }

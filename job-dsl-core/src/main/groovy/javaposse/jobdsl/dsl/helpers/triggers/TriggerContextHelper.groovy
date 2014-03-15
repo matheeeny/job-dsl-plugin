@@ -1,5 +1,6 @@
 package javaposse.jobdsl.dsl.helpers.triggers
 
+import javaposse.jobdsl.dsl.JobManagement
 import javaposse.jobdsl.dsl.JobType
 import javaposse.jobdsl.dsl.WithXmlAction
 import javaposse.jobdsl.dsl.helpers.AbstractContextHelper
@@ -11,8 +12,11 @@ import javaposse.jobdsl.dsl.helpers.AbstractContextHelper
  cron(String cronString)}*/
 class TriggerContextHelper extends AbstractContextHelper<TriggerContext> {
 
-    TriggerContextHelper(List<WithXmlAction> withXmlActions, JobType jobType) {
+    JobManagement jobManagement
+    
+    TriggerContextHelper(List<WithXmlAction> withXmlActions, JobType jobType, JobManagement jobManagement) {
         super(withXmlActions, jobType)
+        this.jobManagement = jobManagement
     }
 
     /**
@@ -20,7 +24,7 @@ class TriggerContextHelper extends AbstractContextHelper<TriggerContext> {
      * @return
      */
     def triggers(Closure closure) {
-        execute(closure, new TriggerContext(withXmlActions, type, []))
+        execute(closure, new TriggerContext(withXmlActions, type, jobManagement, []))
     }
 
     Closure generateWithXmlClosure(TriggerContext context) {

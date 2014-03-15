@@ -1,39 +1,24 @@
 package javaposse.jobdsl.plugin;
 
-import com.cloudbees.plugins.credentials.CredentialsProvider;
-import com.cloudbees.plugins.credentials.common.StandardCredentials;
-import com.google.common.base.Function;
-import com.google.common.base.Predicates;
-import com.google.common.collect.Collections2;
-import com.google.common.collect.Sets;
+import static hudson.model.View.createViewFromXML;
+import static hudson.security.ACL.SYSTEM;
+import static org.apache.commons.lang.reflect.MethodUtils.getMatchingAccessibleMethod;
+import groovy.lang.Closure;
 import groovy.util.Node;
 import groovy.util.XmlParser;
 import hudson.EnvVars;
-import hudson.ExtensionList;
 import hudson.FilePath;
 import hudson.Plugin;
 import hudson.XmlFile;
+import hudson.model.Item;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.Cause;
-import hudson.model.Item;
 import hudson.model.Run;
 import hudson.model.View;
 import hudson.util.VersionNumber;
 import hudson.util.XStream2;
-import javaposse.jobdsl.dsl.AbstractJobManagement;
-import javaposse.jobdsl.dsl.ConfigurationMissingException;
-import javaposse.jobdsl.dsl.GeneratedJob;
-import javaposse.jobdsl.dsl.JobConfigurationNotFoundException;
-import javaposse.jobdsl.dsl.NameNotProvidedException;
-import javaposse.jobdsl.dsl.helpers.Context;
-import jenkins.model.Jenkins;
-import jenkins.model.ModifiableTopLevelItemGroup;
-import org.apache.commons.lang.ClassUtils;
-import org.custommonkey.xmlunit.Diff;
-import org.custommonkey.xmlunit.XMLUnit;
 
-import javax.xml.transform.stream.StreamSource;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,15 +26,36 @@ import java.io.PrintStream;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static hudson.model.View.createViewFromXML;
-import static hudson.security.ACL.SYSTEM;
-import static org.apache.commons.lang.reflect.MethodUtils.getMatchingAccessibleMethod;
+import javaposse.jobdsl.dsl.AbstractJobManagement;
+import javaposse.jobdsl.dsl.ConfigurationMissingException;
+import javaposse.jobdsl.dsl.GeneratedJob;
+import javaposse.jobdsl.dsl.JobConfigurationNotFoundException;
+import javaposse.jobdsl.dsl.NameNotProvidedException;
+import javaposse.jobdsl.dsl.helpers.Context;
+
+import javax.xml.transform.stream.StreamSource;
+
+import jenkins.model.ModifiableTopLevelItemGroup;
+import jenkins.model.Jenkins;
+
+import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.ClassUtils;
+import org.custommonkey.xmlunit.Diff;
+import org.custommonkey.xmlunit.XMLUnit;
+
+import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.cloudbees.plugins.credentials.common.StandardCredentials;
+import com.google.common.base.Function;
+import com.google.common.base.Predicates;
+import com.google.common.collect.Collections2;
+import com.google.common.collect.Sets;
 
 /**
  * Manages Jenkins Jobs, providing facilities to retrieve and create / update.
@@ -113,8 +119,14 @@ public final class JenkinsJobManagement extends AbstractJobManagement {
 
         if (project == null) {
             created = createNewJob(fullJobName, config);
+            for (JobDslContextExtensionPoint jobDslContextExtensionPoint : Jenkins.getInstance().getExtensionList(JobDslContextExtensionPoint.class)) {
+                jobDslContextExtensionPoint.notifyJobConfigCreated(jobName);
+            }
         } else if (!ignoreExisting) {
             created = updateExistingJob(project, config);
+            for (JobDslContextExtensionPoint jobDslContextExtensionPoint : Jenkins.getInstance().getExtensionList(JobDslContextExtensionPoint.class)) {
+                jobDslContextExtensionPoint.notifyJobConfigUpdated(jobName);
+            }
         }
         return created;
     }
@@ -312,15 +324,28 @@ public final class JenkinsJobManagement extends AbstractJobManagement {
         return Sets.newLinkedHashSet(Collections2.filter(Collections2.transform(jobs, new ExtractTemplate()), Predicates.notNull()));
     }
 
+    /**
+     * @see javaposse.jobdsl.dsl.AbstractJobManagement#callExtension(java.lang.Class, java.lang.String, java.lang.Object[])
+     */
+    @SuppressWarnings("rawtypes")
     @Override
     public Node callExtension(final Class<? extends Context> contextType, final String name, Object... args) {
-        ExtensionList<JobDslContextExtensionPoint> extensionList = Jenkins.getInstance().getExtensionList(JobDslContextExtensionPoint.class);
+        LOGGER.fine("Call Extension for method (" + name + ") and arguments (" + Arrays.toString(args) + ")");
         Method method = null;
         JobDslContextExtensionPoint extension = null;
+        // JobManagement must always be the first parameters of each @DslMethod annotated method
+        args = ArrayUtils.add(args, 0, this);
         Class[] parameterTypes = ClassUtils.toClass(args);
-        for (JobDslContextExtensionPoint jobDslContextExtensionPoint : extensionList) {
+        Class[] targetTypes = new Class[] {};
+        // Switch Closure type to Runnable, so that extension must not include Closure as import type
+        for (int i = 0; i < parameterTypes.length; i++) {
+            Class pa = parameterTypes[i];
+            targetTypes = (Class[]) ArrayUtils.add(targetTypes, Closure.class.isInstance(args[i]) ? Runnable.class : pa);
+        }
+        // Find extensions that match any @DslMethod annotated method with the given name and parameters
+        for (JobDslContextExtensionPoint jobDslContextExtensionPoint : Jenkins.getInstance().getExtensionList(JobDslContextExtensionPoint.class)) {
             try {
-                Method candidateMethod = getMatchingAccessibleMethod(jobDslContextExtensionPoint.getClass(), name, parameterTypes);
+                Method candidateMethod = getMatchingAccessibleMethod(jobDslContextExtensionPoint.getClass(), name, targetTypes);
                 DslMethod annotation = candidateMethod.getAnnotation(DslMethod.class);
                 if (annotation != null && annotation.context().isAssignableFrom(contextType)) {
                     method = candidateMethod;
@@ -331,12 +356,24 @@ public final class JenkinsJobManagement extends AbstractJobManagement {
                 // ignore
             }
         }
+        
+        // TODO: check, if there is more than one extension that supports the required method name and arguments
+        
         if (extension == null || method == null) {
             return null;
         }
         try {
             Object result = method.invoke(extension, args);
-            return new XmlParser().parseText(XSTREAM.toXML(result));
+            // if the result is already a String, this String is supposed to be (or better: must be) correct XML
+            String xml;
+            if (result instanceof String) {
+                xml = (String) result;
+            } else {
+                // otherwise transform object to XML ...
+                xml = XSTREAM.toXML(result);
+            }
+            LOGGER.fine("Extension " + method.getClass().getSimpleName() + " created XML node: " + xml);
+            return new XmlParser().parseText(xml);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

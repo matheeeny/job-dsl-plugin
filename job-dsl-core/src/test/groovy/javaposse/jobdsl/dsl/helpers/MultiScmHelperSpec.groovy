@@ -1,5 +1,6 @@
 package javaposse.jobdsl.dsl.helpers
 
+import javaposse.jobdsl.dsl.Job;
 import javaposse.jobdsl.dsl.JobManagement
 import javaposse.jobdsl.dsl.JobType
 import javaposse.jobdsl.dsl.WithXmlAction
@@ -13,7 +14,7 @@ public class MultiScmHelperSpec extends Specification {
     List<WithXmlAction> mockActions = Mock()
     JobManagement mockJobManagement = Mock(JobManagement)
     MultiScmContextHelper helper = new MultiScmContextHelper(mockActions, JobType.Freeform, mockJobManagement)
-    ScmContext context = new ScmContext(true)
+    ScmContext context = new ScmContext(true, mockActions, mockJobManagement)
 
     // Most tests are in ScmHelperSpec
 

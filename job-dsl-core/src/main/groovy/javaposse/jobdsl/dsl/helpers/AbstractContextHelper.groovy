@@ -23,6 +23,17 @@ abstract class AbstractContextHelper<T extends Context> extends AbstractHelper {
             // TODO Create callback to concrete classes, so that they can "enhance" the closure, e.g. with static imports
         }
     }
+
+    static def executeInContext(Runnable runnable, Context freshContext) {
+        if(runnable) {
+            Closure closure = runnable
+            closure.delegate = freshContext
+            closure.resolveStrategy = Closure.DELEGATE_FIRST
+            def result = closure.call() // No args
+
+            // TODO Create callback to concrete classes, so that they can "enhance" the closure, e.g. with static imports
+        }
+    }
     /**
      * Make assumption that we're creating top level xml elements
      * @param closure

@@ -1,19 +1,24 @@
 package javaposse.jobdsl.dsl.helpers.step
 
-import com.google.common.base.Preconditions
-import javaposse.jobdsl.dsl.WithXmlAction
-import javaposse.jobdsl.dsl.helpers.AbstractContextHelper
-import javaposse.jobdsl.dsl.helpers.Context
-import javaposse.jobdsl.dsl.helpers.common.DownstreamContext
-import javaposse.jobdsl.dsl.helpers.toplevel.EnvironmentVariableContext
-
 import static javaposse.jobdsl.dsl.helpers.common.MavenContext.LocalRepositoryLocation.LocalToWorkspace
+import javaposse.jobdsl.dsl.JobManagement
+import javaposse.jobdsl.dsl.WithXmlAction
+import javaposse.jobdsl.dsl.helpers.AbstractContext
+import javaposse.jobdsl.dsl.helpers.AbstractContextHelper
+import javaposse.jobdsl.dsl.helpers.common.DownstreamContext
 
-class AbstractStepContext implements Context {
+import com.google.common.base.Preconditions
+
+class AbstractStepContext extends AbstractContext {
     List<Node> stepNodes = []
 
-    AbstractStepContext(List<Node> stepNodes = []) {
+    AbstractStepContext(JobManagement jobManagement, List<Node> stepNodes = []) {
+        super(jobManagement)
         this.stepNodes = stepNodes
+    }
+    
+    void addExtensionNode(Node node) {
+        stepNodes << node
     }
 
     /**
@@ -631,7 +636,7 @@ class AbstractStepContext implements Context {
      </org.jenkinsci.plugins.conditionalbuildstep.singlestep.SingleConditionalBuilder>
      */
     def conditionalSteps(Closure conditionalStepsClosure) {
-        ConditionalStepsContext conditionalStepsContext = new ConditionalStepsContext()
+        ConditionalStepsContext conditionalStepsContext = new ConditionalStepsContext(jobManagement)
         AbstractContextHelper.executeInContext(conditionalStepsClosure, conditionalStepsContext)
 
         if (conditionalStepsContext.stepNodes.size() > 1) {

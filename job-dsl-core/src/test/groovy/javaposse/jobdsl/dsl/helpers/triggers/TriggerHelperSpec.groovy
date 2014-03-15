@@ -1,5 +1,6 @@
 package javaposse.jobdsl.dsl.helpers.triggers
 
+import javaposse.jobdsl.dsl.JobManagement
 import javaposse.jobdsl.dsl.JobType
 import javaposse.jobdsl.dsl.WithXmlAction
 import javaposse.jobdsl.dsl.WithXmlActionSpec
@@ -8,8 +9,9 @@ import spock.lang.Specification
 public class TriggerHelperSpec extends Specification {
 
     List<WithXmlAction> mockActions = Mock()
-    TriggerContextHelper helper = new TriggerContextHelper(mockActions, JobType.Freeform)
-    TriggerContext context = new TriggerContext()
+    JobManagement jobManagement = Mock()
+    TriggerContextHelper helper = new TriggerContextHelper(mockActions, JobType.Freeform, jobManagement)
+    TriggerContext context = new TriggerContext(jobManagement)
 
     def 'call github trigger methods'() {
         when:
@@ -465,7 +467,7 @@ public class TriggerHelperSpec extends Specification {
         }
 
         when:
-        def withXmlAction = helper.generateWithXmlAction(new TriggerContext([], JobType.Freeform, [triggerNode]))
+        def withXmlAction = helper.generateWithXmlAction(new TriggerContext([], JobType.Freeform, jobManagement, [triggerNode]))
         withXmlAction.execute(root)
 
         then:
@@ -482,7 +484,7 @@ public class TriggerHelperSpec extends Specification {
 
     def 'call snapshotDependencies for Maven job succeeds'() {
         when:
-        TriggerContext context = new TriggerContext([], JobType.Maven, [])
+        TriggerContext context = new TriggerContext([], JobType.Maven, jobManagement, [])
         context.snapshotDependencies(false)
 
         then:
