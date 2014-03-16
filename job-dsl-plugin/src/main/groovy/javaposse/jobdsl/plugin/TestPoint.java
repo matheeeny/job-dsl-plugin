@@ -1,14 +1,13 @@
 package javaposse.jobdsl.plugin;
 
 import hudson.Extension;
-import javaposse.jobdsl.dsl.JobManagement;
 import javaposse.jobdsl.dsl.helpers.wrapper.WrapperContext;
 
 @Extension
 public class TestPoint extends JobDslContextExtensionPoint {
 
     @DslMethod(context = WrapperContext.class)
-    public Object xxx(JobManagement jobManagement, Runnable closure) {
+    public Object xxx(Runnable closure) {
         String xml = "<hudson.plugins.timestamper.TimestamperBuildWrapper/>";
         return xml;
     }

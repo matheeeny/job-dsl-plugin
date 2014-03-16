@@ -333,8 +333,6 @@ public final class JenkinsJobManagement extends AbstractJobManagement {
         LOGGER.fine("Call Extension for method (" + name + ") and arguments (" + Arrays.toString(args) + ")");
         Method method = null;
         JobDslContextExtensionPoint extension = null;
-        // JobManagement must always be the first parameters of each @DslMethod annotated method
-        args = ArrayUtils.add(args, 0, this);
         Class[] parameterTypes = ClassUtils.toClass(args);
         Class[] targetTypes = new Class[] {};
         // Switch Closure type to Runnable, so that extension must not include Closure as import type
