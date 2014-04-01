@@ -333,8 +333,6 @@ public final class JenkinsJobManagement extends AbstractJobManagement {
         LOGGER.fine("Call Extension for method (" + name + ") and arguments (" + Arrays.toString(args) + ")");
         Method method = null;
         JobDslContextExtensionPoint extension = null;
-        // JobManagement must always be the first parameters of each @DslMethod annotated method
-        args = ArrayUtils.add(args, 0, this);
         Class[] parameterTypes = ClassUtils.toClass(args);
         Class[] targetTypes = new Class[] {};
         // Switch Closure type to Runnable, so that extension must not include Closure as import type
@@ -344,21 +342,20 @@ public final class JenkinsJobManagement extends AbstractJobManagement {
         }
         // Find extensions that match any @DslMethod annotated method with the given name and parameters
         for (JobDslContextExtensionPoint jobDslContextExtensionPoint : Jenkins.getInstance().getExtensionList(JobDslContextExtensionPoint.class)) {
-            try {
-                Method candidateMethod = getMatchingAccessibleMethod(jobDslContextExtensionPoint.getClass(), name, targetTypes);
-                DslMethod annotation = candidateMethod.getAnnotation(DslMethod.class);
-                if (annotation != null && annotation.context().isAssignableFrom(contextType)) {
-                    method = candidateMethod;
-                    extension = jobDslContextExtensionPoint;
-                    break;
-                }
-            } catch (Exception e) {
-                // ignore
+            if (extension != null) {
+                throw new ExtensionPointException("The method with the signature '" + name + "("
+                        + Arrays.toString(targetTypes) + ")' is already registered in another ExtensionPoint ("
+                        + extension.getClass().getCanonicalName() + "). "
+                        + "Please inform the ExtensionPoint developers about this fact.");
+            }
+            Method candidateMethod = getMatchingAccessibleMethod(jobDslContextExtensionPoint.getClass(), name,
+                    targetTypes);
+            DslMethod annotation = candidateMethod.getAnnotation(DslMethod.class);
+            if (annotation != null && annotation.context().isAssignableFrom(contextType)) {
+                method = candidateMethod;
+                extension = jobDslContextExtensionPoint;
             }
         }
-        
-        // TODO: check, if there is more than one extension that supports the required method name and arguments
-        
         if (extension == null || method == null) {
             return null;
         }
