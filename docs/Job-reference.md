@@ -1752,7 +1752,7 @@ predefinedProps methods are used to accumulate properties, meaning that they can
 
 Examples:
 ```groovy
-publishers {
+steps {
     downstreamParameterized {
         trigger('Project1, Project2', 'UNSTABLE_OR_BETTER', true) {
             currentBuild() // Current build parameters
@@ -1765,6 +1765,17 @@ publishers {
             subversionRevision() // Subversion Revision
         }
         trigger('Project2') {
+            currentBuild()
+        }
+    }
+}
+```
+
+downstreamParameterized can also be used as a publisher
+```groovy
+publishers {
+    downstreamParameterized {
+        trigger('Project3', 'UNSTABLE_OR_BETTER', true) {
             currentBuild()
         }
     }
